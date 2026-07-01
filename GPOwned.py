@@ -1784,19 +1784,21 @@ displayName={display_name}
             self.SMBWriteFile(xmlPath, modified)
         self.updateGUID(info, k, ['Group Policy Scheduled Tasks', 'Scheduled Tasks'], dn)
 
-    def get_machine_name(self,args, domain):
-        if args.dc_ip is not None:
-            s = SMBConnection(args.dc_ip, args.dc_ip)
-        else:
-            s = SMBConnection(domain, domain)
+    def get_machine_name(self, args, domain):
+        target = args.dc_ip if args.dc_ip is not None else domain
+        s = SMBConnection(target, target)
         try:
             s.login('', '')
         except Exception:
-            if s.getServerName() == '':
-                raise Exception('Error while anonymous logging into %s' % domain)
-        else:
+            pass
+        name = s.getServerName()
+        try:
             s.logoff()
-        return s.getServerName()
+        except Exception:
+            pass
+        if not name:
+            return target
+        return name
 
 def parse_args():
     parser = argparse.ArgumentParser(add_help = True, description = "GPO Helper - @TheXC3LL")
